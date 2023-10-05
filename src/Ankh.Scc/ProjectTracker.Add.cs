@@ -17,14 +17,13 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
-
-using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell.Interop;
 
 using SharpSvn;
 using Ankh.Commands;
 using Ankh.Selection;
 using IDataObject = System.Windows.Forms.IDataObject;
+using Ankh.Scc.ProjectMap;
 
 namespace Ankh.Scc
 {
@@ -142,9 +141,16 @@ namespace Ankh.Scc
 
                 IVsSccProject2 sccProject = rgpProjects[iProject] as IVsSccProject2;
 
+                string projectDir = string.Empty;
+                SccProjectData data;
+                if (ProjectMap.TryGetSccProject(sccProject, out data))
+                {
+                    projectDir = data.ProjectDirectory;
+                }
+
                 bool trackCopies;
                 bool track = SccEvents.TrackProjectChanges(sccProject, out trackCopies);
-
+             
                 for (; iFile < iLastFileThisProject; iFile++)
                 {
                     if (!track)
@@ -157,6 +163,13 @@ namespace Ankh.Scc
                         continue;
 
                     newName = SvnTools.GetNormalizedFullPath(newName);
+                    if (!string.IsNullOrEmpty(projectDir)  && !newName.StartsWith(projectDir))
+                    {
+                        // File is outside of our project folder. Do not track changes to avoid 
+                        // performance issues (e.g. if nuget package imports many content files 
+                        // which will be processed in this event handler)
+                        continue;
+                    }
 
                     if (sccActive && _solutionLoaded)
                     {
@@ -376,6 +389,12 @@ namespace Ankh.Scc
                 throw new ArgumentNullException("file1");
             else if (string.IsNullOrEmpty(file2))
                 throw new ArgumentNullException("file2");
+
+            if (string.Compare(file1, file2, StringComparison.Ordinal) == 0)
+            {
+                return true;
+            }
+
             // We assume 
             // - Filelengths are equal
             // - Both files exist
