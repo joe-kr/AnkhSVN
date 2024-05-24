@@ -47,7 +47,9 @@ namespace Ankh.UI.SccManagement
 
             if (DesignMode)
                 return;
-
+            
+            // do not prefilter so that user can directly exit "Lock" dialog with the "Return" key
+            ContainerMode = VSContainerMode.Default;
             Message = _originalText;
         }
 
