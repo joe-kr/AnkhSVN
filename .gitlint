@@ -1,0 +1,11 @@
+[general]
+# Ignore certain rules (comma-separated list), you can reference them by
+# their id or by their full name
+
+# Disable the rule for checking the body message and also allow title message not be restricted in length.
+ignore=body-is-missing,title-max-length
+
+# Enable conventional commits checks
+contrib=contrib-title-conventional-commits
+
+
